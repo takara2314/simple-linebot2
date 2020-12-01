@@ -9,6 +9,10 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, ImageSendMessage,
 )
+
+import threading
+from time import sleep
+
 import os
 
 app = Flask(__name__)
@@ -56,14 +60,29 @@ def handle_message(event):
 
         if (event.message.text == "おはようございます"):
             response_message = "おはようー！"
+
         elif (event.message.text == "こんにちは"):
             response_message = "こんにちはー！"
+
         elif (event.message.text == "こんばんは"):
             response_message = "こんばんはー！"
+
         elif (event.message.text == "好きな食べものはなんですか？"):
             response_message = "寿司！"
+
         elif (event.message.text == "確認"):
             response_message = "普通のやつ: {}\nよく使われるやつ: {}".format(profile.user_id, profile.user_id[:5])
+
+        elif (event.message.text[-7:] == "秒後に起こして"):
+            seconds = int(event.message.text[:-7])
+            response_message = "{}秒後に起こします。".format(seconds)
+            task = threading.Thread(
+                name="alarm",
+                target=time_response,
+                args=(profile.user_id, seconds)
+            )
+            task.start()
+
         else:
             response_message = "何その言葉？"
 
@@ -74,6 +93,16 @@ def handle_message(event):
                 TextSendMessage(text=response_message)
             ]
         )
+
+def time_response(user_id, seconds):
+    push_message = "起きてくださーい！"
+
+    sleep(seconds)
+
+    line_bot_api.push_message(
+        user_id,
+        messages=TextSendMessage(text=push_message)
+    )
 
 # ポート番号をHerokuの実行設定から取得
 port = os.getenv("PORT")
