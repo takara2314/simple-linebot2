@@ -18,9 +18,9 @@ import os
 app = Flask(__name__)
 
 # チャネルシークレットを設定
-YOUR_CHANNEL_SECRET = "2d8d61fcf3c9b777574ba82a92f38edb"
+YOUR_CHANNEL_SECRET = "XXX"
 # チャネルアクセストークンを設定
-YOUR_CHANNEL_ACCESS_TOKEN = "IavgpUjW1hOUArKEQnyBuZSjtJPOnVQ1yAZgvQOP0MUBK1+3gDa0bM1x+/esPM8tuj0YGr11HKaIJev2Lm/BE/47OQfiLULBM3KkMKUiZeyLpM5NvGfnmMC0Q45u93950ye8XNsBnFBUQqJmZXWRggdB04t89/1O/w1cDnyilFU="
+YOUR_CHANNEL_ACCESS_TOKEN = "XXX"
 
 # LINEbotAPI について定義
 line_bot_api = LineBotApi(YOUR_CHANNEL_ACCESS_TOKEN)
@@ -76,17 +76,20 @@ def handle_message(event):
         elif (event.message.text[-7:] == "秒後に起こして"):
             seconds = int(event.message.text[:-7])
             response_message = "{}秒後に起こします。".format(seconds)
+            # 並列処理(マルチタスク)を定義
+            # (その処理の中で、指定した秒数だけシステムを一時停止し、プッシュメッセージを送る)
             task = threading.Thread(
                 name="alarm",
                 target=time_response,
                 args=(profile.user_id, seconds)
             )
+            # 並列処理を開始
             task.start()
 
         else:
             response_message = "何その言葉？"
 
-        # 返信文を送信
+        # リプライメッセージを送信
         line_bot_api.reply_message(
             event.reply_token,
             [
@@ -94,11 +97,13 @@ def handle_message(event):
             ]
         )
 
+# IDと指定した秒数を与えると、その秒数後にそのIDに向けてプッシュメッセージを送信する
 def time_response(user_id, seconds):
     push_message = "起きてくださーい！"
 
     sleep(seconds)
 
+    # プッシュメッセージを送信
     line_bot_api.push_message(
         user_id,
         messages=TextSendMessage(text=push_message)
